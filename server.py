@@ -612,29 +612,27 @@ def api_refresh():
     return jsonify({"message": "Refresh started."})
 
 
-# ── Main ───────────────────────────────────────────────────────────
-def main():
-    print("=" * 60)
-    print("  NEX Holders Leaderboard Server")
-    print("  Nexus Testnet")
-    print("=" * 60)
+# ── Startup Init (runs on import — needed for gunicorn) ────────────
+print("=" * 60)
+print("  NEX Holders Leaderboard Server")
+print("  Nexus Testnet")
+print("=" * 60)
 
-    # Try loading cache first
-    print("\n[1] Loading cache...")
-    cached = load_cache()
-    if not cached:
-        print("  No cache found. Will fetch data on first load.")
+# Try loading cache first
+print("\n[1] Loading cache...")
+_cached = load_cache()
+if not _cached:
+    print("  No cache found. Will fetch data on first load.")
 
-    # Start background refresh thread
-    print("[2] Starting background refresh thread...")
-    bg_thread = threading.Thread(target=background_refresh_loop, daemon=True)
-    bg_thread.start()
+# Start background refresh thread
+print("[2] Starting background refresh thread...")
+_bg_thread = threading.Thread(target=background_refresh_loop, daemon=True)
+_bg_thread.start()
 
+
+# ── Main (local dev only) ──────────────────────────────────────────
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print(f"[3] Starting Flask server on http://localhost:{port}")
     print("=" * 60)
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
-
-
-if __name__ == "__main__":
-    main()
