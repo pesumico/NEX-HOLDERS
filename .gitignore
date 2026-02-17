@@ -1,0 +1,23 @@
+# Cache and data
+holders_cache.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Dev/debug scripts
+check_cache.py
+check_stats.py
+count_thresholds.py
+debug_check.py
+export_now.py
+fetch_all_nex_holders.py
+
+# Excel exports and temp files
+*.xlsx
+~$*
+
+# Text files
+*.txt

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEX Holders Leaderboard — Nexus Testnet</title>
+    <meta name="description"
+        content="Check your NEX token rank, explore the leaderboard, and track holder distribution on the Nexus Testnet.">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="navbar-brand" onclick="showPage('home'); return false;">
+                <div class="logo-icon">N</div>
+                NEX Leaderboard
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#" class="active" data-page="home" onclick="showPage('home'); return false;">Home</a></li>
+                <li><a href="#" data-page="leaderboard" onclick="showPage('leaderboard'); return false;">Leaderboard</a>
+                </li>
+                <li><a href="#" data-page="distribution"
+                        onclick="showPage('distribution'); return false;">Distribution</a></li>
+            </ul>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connecting...</span>
+        <span id="statusUpdate">—</span>
+    </div>
+
+    <!-- ═══════════════ HOME PAGE ═══════════════ -->
+    <div class="page-section active" id="page-home">
+        <div class="container">
+            <!-- Hero -->
+            <div class="hero">
+                <h1>NEX Holders Leaderboard</h1>
+                <p>Check your wallet rank among all NEX token holders on the Nexus Testnet</p>
+            </div>
+
+            <!-- Search -->
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Enter wallet address (0x...)"
+                        maxlength="42" onkeydown="if(event.key==='Enter') searchAddress()">
+                    <button class="search-btn" onclick="searchAddress()" title="Search">&#x1F50D;</button>
+                </div>
+                <div class="search-error" id="searchError"></div>
+            </div>
+
+            <!-- Search Result -->
+            <div class="address-result" id="addressResult">
+                <!-- Filled by JS -->
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Holders</div>
+                    <div class="stat-value" id="statHolders">—</div>
+                    <div class="stat-sub">addresses with NEX</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Supply</div>
+                    <div class="stat-value" id="statSupply">—</div>
+                    <div class="stat-sub">NEX tokens</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Transactions</div>
+                    <div class="stat-value" id="statTxns">—</div>
+                    <div class="stat-sub">on-chain</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Blocks</div>
+                    <div class="stat-value" id="statBlocks">—</div>
+                    <div class="stat-sub">mined</div>
+                </div>
+            </div>
+
+            <!-- Two columns: Top 10 + Distribution Preview -->
+            <div class="sections-grid">
+                <!-- Top 10 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>&#x1F3C6; Top 10 Holders</h2>
+                        <a href="#" class="btn" onclick="showPage('leaderboard'); return false;">View All</a>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Address</th>
+                                    <th>Balance</th>
+                                    <th>% Supply</th>
+                                </tr>
+                            </thead>
+                            <tbody id="top10Body">
+                                <tr>
+                                    <td colspan="4" class="loading">
+                                        <div class="spinner"></div> Loading...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Distribution Preview -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2>&#x1F4CA; Holder Distribution</h2>
+                        <a href="#" class="btn" onclick="showPage('distribution'); return false;">Details</a>
+                    </div>
+                    <div class="card-body" id="distPreview">
+                        <div class="loading">
+                            <div class="spinner"></div> Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ LEADERBOARD PAGE ═══════════════ -->
+    <div class="page-section" id="page-leaderboard">
+        <div class="container">
+            <div
+                style="padding-top: 32px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <h1 style="font-size: 1.5rem; font-weight: 700;">&#x1F3C6; Full Leaderboard</h1>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" class="search-input" id="leaderboardSearch" placeholder="Filter by address..."
+                        style="width: 280px; padding: 10px 14px; font-size: 0.85rem; border-radius: 8px;"
+                        onkeydown="if(event.key==='Enter') filterLeaderboard()">
+                    <button class="btn" onclick="filterLeaderboard()">Filter</button>
+                    <a href="/api/export" class="btn" download>&#x1F4E5; Export CSV</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Address</th>
+                                <th>Balance (NEX)</th>
+                                <th>Tx Count</th>
+                                <th>Type</th>
+                                <th>% Supply</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboardBody">
+                            <tr>
+                                <td colspan="6" class="loading">
+                                    <div class="spinner"></div> Loading...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="leaderboardPagination">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ DISTRIBUTION PAGE ═══════════════ -->
+    <div class="page-section" id="page-distribution">
+        <div class="container">
+            <div style="padding-top: 32px; margin-bottom: 24px;">
+                <h1 style="font-size: 1.5rem; font-weight: 700;">&#x1F4CA; Holder Distribution</h1>
+                <p style="color: var(--text-secondary); margin-top: 4px;">Wealth concentration across balance tiers</p>
+            </div>
+
+            <div class="card">
+                <div class="card-body" id="distFull">
+                    <div class="loading">
+                        <div class="spinner"></div> Loading distribution data...
+                    </div>
+                </div>
+            </div>
+
+            <div class="sections-grid" style="margin-top: 24px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>&#x1F4B0; Supply Stats</h2>
+                    </div>
+                    <div class="card-body" id="supplyStats">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2>&#x1F310; Network Stats</h2>
+                    </div>
+                    <div class="card-body" id="networkStats">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>NEX Holders Leaderboard &middot; Nexus Testnet &middot;
+                Data from <a href="https://nexus.testnet.blockscout.com" target="_blank">Blockscout</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // ── State ──────────────────────────────────────────────
+        let currentPage = 'home';
+        let lbPage = 1;
+        let lbLimit = 50;
+        let statsData = null;
+        let autoRefreshInterval = null;
+
+        // ── Navigation ─────────────────────────────────────────
+        function showPage(page) {
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+            document.querySelectorAll('.nav-links a').forEach(a => {
+                a.classList.toggle('active', a.dataset.page === page);
+            });
+            currentPage = page;
+            document.getElementById('navLinks').classList.remove('open');
+            window.scrollTo(0, 0);
+
+            if (page === 'leaderboard') loadLeaderboard();
+            if (page === 'distribution') loadDistribution();
+        }
+
+        function toggleMenu() {
+            document.getElementById('navLinks').classList.toggle('open');
+        }
+
+        // ── Formatting ─────────────────────────────────────────
+        function fmt(n, decimals = 2) {
+            if (n === null || n === undefined || n === 'N/A') return '—';
+            return Number(n).toLocaleString(undefined, {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function fmtCompact(n) {
+            if (n === null || n === undefined) return '—';
+            const num = Number(n);
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return fmt(num);
+        }
+
+        function fmtAddr(addr, len = 6) {
+            if (!addr) return '—';
+            return addr.slice(0, len + 2) + '...' + addr.slice(-len);
+        }
+
+        function timeAgo(isoStr) {
+            if (!isoStr) return 'Never';
+            const diff = (Date.now() - new Date(isoStr).getTime()) / 1000;
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        function rankBadge(rank) {
+            const cls = rank <= 3 ? `rank-${rank}` : 'rank-normal';
+            const medal = rank === 1 ? '🥇 ' : rank === 2 ? '🥈 ' : rank === 3 ? '🥉 ' : '';
+            return `<span class="rank-badge ${cls}">${medal}#${rank.toLocaleString()}</span>`;
+        }
+
+        // ── API Calls ──────────────────────────────────────────
+        async function fetchAPI(endpoint) {
+            const r = await fetch(endpoint);
+            if (!r.ok) {
+                const e = await r.json().catch(() => ({ error: 'Request failed' }));
+                throw new Error(e.error || 'Request failed');
+            }
+            return r.json();
+        }
+
+        // ── Load Stats ─────────────────────────────────────────
+        async function loadStats() {
+            try {
+                const d = await fetchAPI('/api/stats');
+                statsData = d;
+
+                document.getElementById('statHolders').textContent = d.total_holders?.toLocaleString() || '—';
+                document.getElementById('statSupply').textContent = fmtCompact(d.total_supply);
+                document.getElementById('statTxns').textContent = Number(d.chain_stats?.total_transactions || 0).toLocaleString();
+                document.getElementById('statBlocks').textContent = Number(d.chain_stats?.total_blocks || 0).toLocaleString();
+
+                // Status bar
+                const dot = document.getElementById('statusDot');
+                const txt = document.getElementById('statusText');
+                const upd = document.getElementById('statusUpdate');
+
+                if (d.is_refreshing) {
+                    dot.className = 'status-dot refreshing';
+                } else {
+                    dot.className = 'status-dot';
+                }
+                txt.textContent = `${d.total_holders?.toLocaleString() || '—'} holders tracked`;
+                upd.textContent = `Updated ${timeAgo(d.last_updated)}`;
+
+                // Top 10
+                renderTop10(d.top10 || []);
+
+            } catch (e) {
+                console.error('Stats error:', e);
+                document.getElementById('statusText').textContent = 'Connection error';
+            }
+        }
+
+        function renderTop10(items) {
+            const tbody = document.getElementById('top10Body');
+            if (!items.length) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-muted); padding: 20px;">No data yet — data is loading...</td></tr>';
+                return;
+            }
+            tbody.innerHTML = items.map((h, i) => {
+                const supply = statsData?.total_supply || 1;
+                const pct = (h.balance / supply * 100);
+                return `<tr onclick="quickSearch('${h.address}')" style="cursor:pointer;">
+            <td>${rankBadge(i + 1)}</td>
+            <td class="addr-cell">${fmtAddr(h.address)}</td>
+            <td class="balance-val">${fmtCompact(h.balance)}</td>
+            <td>
+                <div class="pct-bar">
+                    <div class="pct-bar-fill" style="width:${Math.min(pct * 2, 80)}px"></div>
+                    <span style="font-size:0.75rem; color:var(--text-muted)">${pct.toFixed(2)}%</span>
+                </div>
+            </td>
+        </tr>`;
+            }).join('');
+        }
+
+        // ── Search ─────────────────────────────────────────────
+        async function searchAddress() {
+            const input = document.getElementById('searchInput');
+            const address = input.value.trim();
+            const errEl = document.getElementById('searchError');
+            const resultEl = document.getElementById('addressResult');
+
+            errEl.style.display = 'none';
+
+            if (!address) {
+                errEl.textContent = 'Please enter a wallet address';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+                errEl.textContent = 'Invalid address format. Must be 0x followed by 40 hex characters.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            resultEl.classList.remove('visible');
+
+            try {
+                const d = await fetchAPI(`/api/search?address=${encodeURIComponent(address)}`);
+
+                if (d.found) {
+                    renderFoundResult(d, resultEl);
+                } else {
+                    renderNotFoundResult(d, resultEl);
+                }
+            } catch (e) {
+                errEl.textContent = e.message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        function quickSearch(addr) {
+            document.getElementById('searchInput').value = addr;
+            showPage('home');
+            setTimeout(() => searchAddress(), 100);
+        }
+
+        function renderFoundResult(d, el) {
+            const vsAvgClass = d.vs_average >= 1 ? 'above' : 'below';
+            const vsAvgText = d.vs_average >= 1
+                ? `${d.vs_average.toFixed(1)}x above avg`
+                : `${(1 / d.vs_average).toFixed(1)}x below avg`;
+
+            let nearbyHtml = '';
+            if (d.nearby && d.nearby.length) {
+                nearbyHtml = `
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-header"><h2>&#x1F4CD; Nearby Holders</h2></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>Rank</th><th>Address</th><th>Balance</th></tr></thead>
+                    <tbody>
+                        ${d.nearby.map(n => `
+                            <tr class="${n.is_current ? 'nearby-you' : ''}" onclick="quickSearch('${n.address}')" style="cursor:pointer">
+                                <td>${rankBadge(n.rank)}</td>
+                                <td class="addr-cell">${fmtAddr(n.address)}${n.is_current ? '<span class="you-badge">YOU</span>' : ''}</td>
+                                <td class="balance-val">${fmt(n.balance, 4)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>`;
+            }
+
+            // Load transactions
+            let txSectionHtml = `
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-header"><h2>&#x1F4DC; Recent Transactions</h2></div>
+        <div class="table-wrapper" id="txTable">
+            <div class="loading"><div class="spinner"></div> Loading transactions...</div>
+        </div>
+    </div>`;
+
+            el.innerHTML = `
+        <div class="result-header">
+            <div class="result-address">${d.address}</div>
+            <div class="result-stats">
+                <div class="result-stat">
+                    <div class="label">Rank</div>
+                    <div class="value rank">#${d.rank.toLocaleString()}</div>
+                    <div class="sub">of ${d.total_holders.toLocaleString()}</div>
+                </div>
+                <div class="result-stat">
+                    <div class="label">Balance</div>
+                    <div class="value balance">${fmtCompact(d.balance)}</div>
+                    <div class="sub">${fmt(d.balance, 4)} NEX</div>
+                </div>
+                <div class="result-stat">
+                    <div class="label">Percentile</div>
+                    <div class="value percentile">Top ${(100 - d.percentile).toFixed(1)}%</div>
+                    <div class="sub"><span class="vs-avg ${vsAvgClass}">${vsAvgText}</span></div>
+                </div>
+                <div class="result-stat">
+                    <div class="label">Supply Share</div>
+                    <div class="value supply">${d.pct_supply.toFixed(4)}%</div>
+                    <div class="sub">${d.tx_count} transactions</div>
+                </div>
+            </div>
+        </div>
+        ${nearbyHtml}
+        ${txSectionHtml}
+    `;
+            el.classList.add('visible');
+
+            // Load txns async
+            loadTransactions(d.address);
+        }
+
+        function renderNotFoundResult(d, el) {
+            el.innerHTML = `
+        <div class="card not-found-card">
+            <div class="icon">&#x1F50D;</div>
+            <h3>Address Not in Top Holders</h3>
+            ${d.live_balance !== undefined ? `
+                <p style="color: var(--text-secondary);">Live balance from the blockchain:</p>
+                <div class="live-balance">${fmt(d.live_balance, 4)} NEX</div>
+            ` : ''}
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 12px;">
+                ${d.message || 'This address was not found in the cached dataset.'}
+                <br>Currently tracking ${d.total_holders?.toLocaleString() || '...'} addresses.
+            </p>
+        </div>`;
+            el.classList.add('visible');
+        }
+
+        async function loadTransactions(address) {
+            try {
+                const d = await fetchAPI(`/api/transactions?address=${encodeURIComponent(address)}`);
+                const container = document.getElementById('txTable');
+
+                if (!d.transactions || !d.transactions.length) {
+                    container.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-muted);">No recent transactions found</div>';
+                    return;
+                }
+
+                const addrLower = address.toLowerCase();
+                container.innerHTML = `
+            <table>
+                <thead><tr>
+                    <th>Hash</th>
+                    <th>Direction</th>
+                    <th>From / To</th>
+                    <th>Value</th>
+                    <th>Time</th>
+                </tr></thead>
+                <tbody>
+                    ${d.transactions.map(tx => {
+                    const isOut = tx.from.toLowerCase() === addrLower;
+                    const counterparty = isOut ? tx.to : tx.from;
+                    return `<tr>
+                            <td><a href="https://nexus.testnet.blockscout.com/tx/${tx.hash}" target="_blank" class="tx-hash">${tx.hash.slice(0, 10)}...</a></td>
+                            <td><span class="tx-badge ${isOut ? 'tx-out' : 'tx-in'}">${isOut ? 'OUT' : 'IN'}</span></td>
+                            <td class="addr-cell" onclick="quickSearch('${counterparty}')">${fmtAddr(counterparty, 4)}</td>
+                            <td class="tx-value">${fmtCompact(tx.value)} NEX</td>
+                            <td style="color: var(--text-muted); font-size: 0.75rem;">${tx.timestamp ? timeAgo(tx.timestamp) : '—'}</td>
+                        </tr>`;
+                }).join('')}
+                </tbody>
+            </table>`;
+            } catch (e) {
+                document.getElementById('txTable').innerHTML = `<div style="padding: 16px; color: var(--text-muted);">Could not load transactions</div>`;
+            }
+        }
+
+        // ── Leaderboard ────────────────────────────────────────
+        async function loadLeaderboard(page = 1) {
+            lbPage = page;
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="loading"><div class="spinner"></div> Loading...</td></tr>';
+
+            try {
+                const q = document.getElementById('leaderboardSearch').value.trim();
+                let url = `/api/leaderboard?page=${page}&limit=${lbLimit}`;
+                if (q) url += `&q=${encodeURIComponent(q)}`;
+
+                const d = await fetchAPI(url);
+
+                if (!d.items.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">No results found</td></tr>';
+                    document.getElementById('leaderboardPagination').innerHTML = '';
+                    return;
+                }
+
+                tbody.innerHTML = d.items.map(h => `
+            <tr onclick="quickSearch('${h.address}')" style="cursor:pointer;">
+                <td>${rankBadge(h.rank)}</td>
+                <td class="addr-cell">${fmtAddr(h.address, 8)}${h.name ? ` <span style="color:var(--text-muted);font-size:0.7rem">(${h.name})</span>` : ''}</td>
+                <td class="balance-val">${fmt(h.balance, 4)}</td>
+                <td style="color: var(--text-secondary)">${h.tx_count?.toLocaleString() || 0}</td>
+                <td><span class="tx-badge" style="background:${h.is_contract ? 'rgba(139,92,246,0.15);color:var(--accent-purple)' : 'rgba(16,185,129,0.15);color:var(--accent-green)'}">${h.is_contract ? 'Contract' : 'EOA'}</span></td>
+                <td>
+                    <div class="pct-bar">
+                        <div class="pct-bar-fill" style="width:${Math.min(h.pct_supply * 2, 80)}px"></div>
+                        <span style="font-size:0.7rem; color:var(--text-muted)">${h.pct_supply.toFixed(4)}%</span>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+                renderPagination(d.page, d.pages, d.total);
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" style="color: var(--accent-red); padding: 20px;">${e.message}</td></tr>`;
+            }
+        }
+
+        function filterLeaderboard() {
+            loadLeaderboard(1);
+        }
+
+        function renderPagination(page, pages, total) {
+            const el = document.getElementById('leaderboardPagination');
+            if (pages <= 1) { el.innerHTML = ''; return; }
+
+            let btns = '';
+            btns += `<button onclick="loadLeaderboard(1)" ${page === 1 ? 'disabled' : ''}>&#x00AB; First</button>`;
+            btns += `<button onclick="loadLeaderboard(${page - 1})" ${page === 1 ? 'disabled' : ''}>&lsaquo; Prev</button>`;
+
+            // Page numbers
+            const start = Math.max(1, page - 2);
+            const end = Math.min(pages, page + 2);
+            for (let i = start; i <= end; i++) {
+                btns += `<button onclick="loadLeaderboard(${i})" class="${i === page ? 'active' : ''}">${i}</button>`;
+            }
+
+            btns += `<button onclick="loadLeaderboard(${page + 1})" ${page === pages ? 'disabled' : ''}> Next &rsaquo;</button>`;
+            btns += `<button onclick="loadLeaderboard(${pages})" ${page === pages ? 'disabled' : ''}> Last &#x00BB;</button>`;
+            btns += `<span class="page-info">${total.toLocaleString()} holders</span>`;
+
+            el.innerHTML = btns;
+        }
+
+        // ── Distribution ───────────────────────────────────────
+        async function loadDistribution() {
+            try {
+                const d = await fetchAPI('/api/distribution');
+                const dist = d.distribution || {};
+                const total = d.total_holders || 1;
+                const maxCount = Math.max(...Object.values(dist), 1);
+
+                const colors = [
+                    '#ef4444', '#f59e0b', '#eab308', '#84cc16',
+                    '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'
+                ];
+
+                const chartHtml = Object.entries(dist).map(([label, count], i) => {
+                    const pct = (count / total * 100).toFixed(1);
+                    const barW = (count / maxCount * 100).toFixed(1);
+                    return `
+                <div class="dist-row">
+                    <div class="dist-label">${label}</div>
+                    <div class="dist-bar-container">
+                        <div class="dist-bar" style="width:${barW}%; background:${colors[i % colors.length]}"></div>
+                    </div>
+                    <div class="dist-count">${count.toLocaleString()} <span style="color:var(--text-muted);font-size:0.65rem">(${pct}%)</span></div>
+                </div>`;
+                }).join('');
+
+                const target = (id) => document.getElementById(id);
+                target('distFull').innerHTML = `<div class="dist-chart">${chartHtml}</div>`;
+                target('distPreview').innerHTML = `<div class="dist-chart">${chartHtml}</div>`;
+
+                // Supply stats
+                if (statsData) {
+                    target('supplyStats').innerHTML = `
+                <div style="display:grid; gap:16px;">
+                    <div><span style="color:var(--text-muted);font-size:0.8rem">Total Supply (Fetched)</span><br>
+                    <span style="font-size:1.2rem;font-weight:700;color:var(--accent-green);font-family:'JetBrains Mono'">${fmtCompact(statsData.total_supply)} NEX</span></div>
+                    <div><span style="color:var(--text-muted);font-size:0.8rem">Total Holders</span><br>
+                    <span style="font-size:1.2rem;font-weight:700;font-family:'JetBrains Mono'">${statsData.total_holders?.toLocaleString()}</span></div>
+                    <div><span style="color:var(--text-muted);font-size:0.8rem">Non-Zero Holders</span><br>
+                    <span style="font-size:1.2rem;font-weight:700;font-family:'JetBrains Mono'">${statsData.non_zero_holders?.toLocaleString()}</span></div>
+                </div>`;
+
+                    target('networkStats').innerHTML = `
+                <div style="display:grid; gap:16px;">
+                    <div><span style="color:var(--text-muted);font-size:0.8rem">Total Addresses</span><br>
+                    <span style="font-size:1.2rem;font-weight:700;font-family:'JetBrains Mono'">${Number(statsData.chain_stats?.total_addresses || 0).toLocaleString()}</span></div>
+                    <div><span style="color:var(--text-muted);font-size:0.8rem">Total Transactions</span><br>
+                    <span style="font-size:1.2rem;font-weight:700;font-family:'JetBrains Mono'">${Number(statsData.chain_stats?.total_transactions || 0).toLocaleString()}</span></div>
+                    <div><span style="color:var(--text-muted);font-size:0.8rem">Average Block Time</span><br>
+                    <span style="font-size:1.2rem;font-weight:700;font-family:'JetBrains Mono'">${statsData.chain_stats?.average_block_time || '—'}ms</span></div>
+                </div>`;
+                }
+            } catch (e) {
+                console.error('Distribution error:', e);
+            }
+        }
+
+        // ── Auto Refresh ───────────────────────────────────────
+        function startAutoRefresh() {
+            loadStats();
+            autoRefreshInterval = setInterval(() => {
+                loadStats();
+            }, 30000); // Refresh UI every 30 seconds
+        }
+
+        // ── Init ───────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            startAutoRefresh();
+            loadDistribution();
+
+            // Check URL hash
+            const hash = window.location.hash.replace('#', '');
+            if (['leaderboard', 'distribution'].includes(hash)) {
+                showPage(hash);
+            }
+
+            // Keyboard shortcut: Ctrl+K or / to focus search
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey && e.key === 'k') || (e.key === '/' && document.activeElement.tagName !== 'INPUT')) {
+                    e.preventDefault();
+                    showPage('home');
+                    document.getElementById('searchInput').focus();
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
